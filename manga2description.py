@@ -33,7 +33,7 @@ def main():
         from models.gpt4o import GPT4o
 
         gpt4o = GPT4o(model=model)
-        descriptions = gpt4o.generate_music_description(image_paths[3:5])
+        descriptions = gpt4o.generate_music_description(image_paths)
 
     elif model in ["llava-7b", "llava-0.5b"]:
         from models.llava import LLAVA
@@ -44,7 +44,7 @@ def main():
             else "lmms-lab/llava-next-interleave-qwen-0.5b"
         )
         llava = LLAVA(pretrained_model=llava_model)
-        descriptions = llava.generate_music_description(image_paths[1:2])
+        descriptions = llava.generate_music_description(image_paths)
 
     # save the descriptions to output path
     Path(args.output_path).mkdir(parents=True, exist_ok=True)
