@@ -72,7 +72,7 @@ def main():
             loudness_compressor=True,
             add_suffix=False,
         )
-        print(f"Generated music for {description_path.stem} at {output_path}")
+        print(f"Generated music for {description_path} at {output_path}")
 
 
 if __name__ == "__main__":
