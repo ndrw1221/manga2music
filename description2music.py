@@ -1,5 +1,4 @@
 import argparse
-import scipy.io.wavfile as wavfile
 from pathlib import Path
 from audiocraft.models import MusicGen
 from audiocraft.data.audio import audio_write
