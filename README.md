@@ -81,14 +81,16 @@ This step extracts descriptions from manga images using the manga2description.py
 **Usage**
 
 ```bash
-python manga2description.py --manga-path ./samples --output-path ./output --model llava-0.5b
+python manga2description.py \
+--output-path ./output \
+--model llava-0.5b
 ```
 
 **Arguments**
 
 - `--manga-path`: Path to the folder containing manga images (default: ./samples).
 - `--output-path`: Path to save the generated descriptions (default: ./output).
-- `--model`: Model to use for description generation (options: gpt-4o, gpt-4o-mini, llava-7b, llava-0.5b).
+- `--model`: Model to use for description generation (default: llava-0.5b; options: gpt-4o, gpt-4o-mini, llava-7b, llava-0.5b).
 
 ### Step 2: Description to Music
 
@@ -97,15 +99,22 @@ After generating descriptions, convert them into music using the description2mus
 **Usage**
 
 ```bash
-python description2music.py --description-path ./output --output-path ./output --model musicgen-small --duration 10 --device cuda
+python description2music.py \
+--description-path ./output \
+--output-path ./output \
+--model musicgen-large \
+--duration 10 \
+--audio-format wav \
+--device cuda
 ```
 
 **Arguments**
 
 - `--description-path`: Path to the folder containing text descriptions (default: ./output).
 - `--output-path`: Path to save the generated music (default: ./output).
-- `--model`: MusicGen model to use (options: musicgen-small, musicgen-medium, musicgen-large).
+- `--model`: MusicGen model to use (default: musicgen-large; options: musicgen-small, musicgen-medium, musicgen-large).
 - `--duration`: Length of the generated music in seconds (default: 10).
+- `--audio-format`: Audio format to save the generated music (default: wav; options: wav, mp3, ogg, flac).
 - `--device`: Device to run the model on (cuda or cpu).
 
  ### Notes

@@ -23,13 +23,20 @@ def parse_args():
         type=str,
         help="Which size of the musicgen model to use.",
         choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
-        default="musicgen-small",
+        default="musicgen-large",
     )
     parser.add_argument(
         "--duration",
         type=int,
         help="Length of the generated music in seconds",
         default=10,
+    )
+    parser.add_argument(
+        "--audio-format",
+        type=str,
+        help="Audio format to save the generated music",
+        default="wav",
+        choices=["wav", "mp3", "ogg", "flac"],
     )
     parser.add_argument(
         "--device",
@@ -62,14 +69,15 @@ def main():
 
     # Save the generated music
     for music, description_path in zip(musics, description_paths):
-        output_path = Path(args.output_path) / f"{description_path.stem}.wav"
+        output_path = Path(args.output_path) / f"{description_path.stem}"
         audio_write(
             output_path,
             music.cpu(),
             model.sample_rate,
+            format=args.audio_format,
             strategy="loudness",
             loudness_compressor=True,
-            add_suffix=False,
+            add_suffix=True,
         )
         print(f"Generated music for {description_path} at {output_path}")
 
