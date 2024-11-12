@@ -13,6 +13,7 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
 - [How to Use](#how-to-use)
   - [Step 1: Manga to Description](#step-1-manga-to-description)
   - [Step 2: Description to Music](#step-2-description-to-music)
+- [Model Selection](#model-selection)
 
 
 ## Setup and Installation
@@ -85,9 +86,9 @@ python manga2description.py --manga-path ./samples --output-path ./output --mode
 
 **Arguments**
 
-- --manga-path: Path to the folder containing manga images (default: ./samples).
-- --output-path: Path to save the generated descriptions (default: ./output).
-- --model: Model to use for description generation (options: gpt-4o, gpt-4o-mini, llava-7b, llava-0.5b).
+- `--manga-path`: Path to the folder containing manga images (default: ./samples).
+- `--output-path`: Path to save the generated descriptions (default: ./output).
+- `--model`: Model to use for description generation (options: gpt-4o, gpt-4o-mini, llava-7b, llava-0.5b).
 
 ### Step 2: Description to Music
 
@@ -101,8 +102,60 @@ python description2music.py --description-path ./output --output-path ./output -
 
 **Arguments**
 
-- --description-path: Path to the folder containing text descriptions (default: ./output).
-- --output-path: Path to save the generated music (default: ./output).
-- --model: MusicGen model to use (options: musicgen-small, musicgen-medium, musicgen-large).
-- --duration: Length of the generated music in seconds (default: 10).
-- --device: Device to run the model on (cuda or cpu).
+- `--description-path`: Path to the folder containing text descriptions (default: ./output).
+- `--output-path`: Path to save the generated music (default: ./output).
+- `--model`: MusicGen model to use (options: musicgen-small, musicgen-medium, musicgen-large).
+- `--duration`: Length of the generated music in seconds (default: 10).
+- `--device`: Device to run the model on (cuda or cpu).
+
+ ### Notes
+- The model can take images of arbitrary sizes, so it is not necessary to cut manga images into fixed sizes before processing. This allows for greater flexibility when using different manga sources.
+
+- A single description will be generated for all images within a single `--manga-path`, and one single piece of music will be generated from that description. If you wish to generate multiple pieces of music for different sections of the manga, organize the images by placing all the images belonging to the same section into separate folders.
+
+## Model Selection
+
+This project uses two categories of models: **text generation models** for manga description extraction and **music generation models** for converting text descriptions into music. Below, we provide an overview of the models used, along with their trade-offs, to help you make an informed decision based on your use case.
+
+### 1. Manga to Description Models
+This step relies on Large Language Models (LLMs) to extract meaningful descriptions from manga images. The models used include **GPT-4o**, **GPT-4o-mini**, **LLAVA-7b**, and **LLAVA-0.5b**.
+
+| Model          | Size    | Strengths                                                                | Limitations                                                            |
+|----------------|---------|--------------------------------------------------------------------------|------------------------------------------------------------------------|
+| **GPT-4o**     | Large   | Superior text understanding and generation; highly detailed descriptions | Requires an OpenAI API key; higher cost per request                    |
+| **GPT-4o-mini**| Medium  | Good balance between performance and cost                                | Requires an OpenAI API key; slightly less accurate than GPT-4o, especially in nuanced contexts     |
+| **LLAVA-7b**   | Large   | Strong at multimodal understanding; good for complex scenes              | Requires more computational resources (GPU with >16GB VRAM recommended)|
+| **LLAVA-0.5b** | Small   | Lightweight and efficient; faster processing                             | Limited in complex scene understanding and descriptive accuracy        |
+
+#### **Model Selection Considerations**
+- **Accuracy vs. Cost**: If you prioritize accuracy and have sufficient budget, **GPT-4o** is ideal due to its high-quality text generation. However, if you're working with limited API budgets, **GPT-4o-mini** is a more cost-effective option.
+- **Computational Resources**: **LLAVA** models are open-source and can run on local machines, which is great for users who want to avoid API costs. However, they require significant GPU resources, especially **LLAVA-7b**. For users with limited hardware capabilities, **LLAVA-0.5b** is a faster, more lightweight option.
+- **Use Case**: For simpler manga scenes, **LLAVA-0.5b** is sufficient. For more complex scenes where detailed storytelling is needed, opt for **LLAVA-7b** or **GPT-4o**.
+
+---
+
+### 2. Description to Music Models
+The second step uses **MusicGen** models to generate music from the textual descriptions produced in the first step. Available models include **musicgen-small**, **musicgen-medium**, and **musicgen-large**.
+
+| Model               | Size      | Strengths                                                      | Limitations                                                               |
+|---------------------|-----------|----------------------------------------------------------------|---------------------------------------------------------------------------|
+| **musicgen-small**  | Small     | Fast generation; lower computational requirements              | Limited complexity and audio quality                                      |
+| **musicgen-medium** | Medium    | Good balance between quality and speed                         | Requires more GPU memory (8GB VRAM recommended)                           |
+| **musicgen-large**  | Large     | Highest audio fidelity; suitable for complex compositions      | Slowest processing; requires substantial GPU memory (16GB VRAM or higher) |
+
+#### **Model Selection Considerations**
+- **Speed vs. Quality**: If you prioritize speed and are willing to compromise on audio quality, **musicgen-small** is your best choice. This model is efficient on consumer-grade GPUs and even CPUs.
+- **Quality for Professional Use**: If your project demands higher audio fidelity and more nuanced compositions (e.g., for video game soundtracks or anime), **musicgen-large** provides the most sophisticated output but requires significant computational resources.
+- **Balancing Trade-offs**: For general use cases where quality is important but resources are limited, **musicgen-medium** offers a great middle ground.
+
+---
+
+### Summary of Recommendations
+| Scenario                                                    | Recommended Models                                |
+|-------------------------------------------------------------|---------------------------------------------------|
+| **High quality text & music output, no budget constraints** | GPT-4o + musicgen-large                           |
+| **Moderate budget, good quality output**                    | GPT-4o-mini + musicgen-medium                     |
+| **Limited GPU resources, faster generation**                | LLAVA-0.5b + musicgen-small                       |
+| **Open-source solution, high-quality descriptions**         | LLAVA-7b + musicgen-large                         |
+
+By understanding the trade-offs, you can optimize the model selection based on your available resources, budget, and the specific requirements of your project.
