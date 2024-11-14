@@ -20,7 +20,21 @@ def parse_args():
         choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
         default="llava-0.5b",
     )
-    return parser.parse_args()
+    # Flag for saving GPT artifacts
+    parser.add_argument(
+        "--save-gpt-artifact",
+        action="store_true",
+        help="Save GPT artifacts (only applicable for gpt-4o or gpt-4o-mini models).",
+    )
+    args = parser.parse_args()
+
+    # Conditional validation: Check if --save-gpt-artifact is set when --model is not gpt-4o or gpt-4o-mini
+    if args.save_gpt_artifact and args.model not in ["gpt-4o", "gpt-4o-mini"]:
+        parser.error(
+            "--save-gpt-artifact can only be used when --model is set to 'gpt-4o' or 'gpt-4o-mini'"
+        )
+
+    return args
 
 
 def main():
@@ -33,7 +47,9 @@ def main():
         from models.gpt4o import GPT4o
 
         gpt4o = GPT4o(model=model)
-        descriptions = gpt4o.generate_music_description(image_paths)
+        descriptions = gpt4o.generate_music_description(
+            image_paths, args.save_gpt_artifact
+        )
 
     elif model in ["llava-7b", "llava-0.5b"]:
         from models.llava import LLAVA

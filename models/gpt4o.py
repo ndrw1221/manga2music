@@ -1,5 +1,8 @@
 import json
 import base64
+import os
+import pytz
+from datetime import datetime
 from pathlib import Path
 from openai import OpenAI
 
@@ -9,6 +12,7 @@ class GPT4o(OpenAI):
         super().__init__()
         self.model = model
         self._prompt_path = "prompt.json"
+        self.timezone = pytz.timezone("Asia/Taipei")
 
     def _get_prompt(self):
         with open(self._prompt_path, "r") as prompt_file:
@@ -54,8 +58,25 @@ class GPT4o(OpenAI):
 
         return response.choices[0].message.content
 
-    def generate_music_description(self, image_paths):
+    def _save_artifact(self, analysis_content):
+        artifacts_dir = Path("artifacts")
+        artifacts_dir.mkdir(exist_ok=True)
+
+        # Generate a timestamp-based filename
+        timestamp = datetime.now(self.timezone).strftime("%Y%m%d_%H%M%S")
+        artifact_file = artifacts_dir / f"artifact_{timestamp}.txt"
+
+        with open(artifact_file, "w") as file:
+            file.write(analysis_content)
+
+        print(f"Artifact saved to {artifact_file}")
+
+    def generate_music_description(self, image_paths, save_artifact=False):
         image_analysis = self._analyze_images(image_paths)
+
+        if save_artifact:
+            self._save_artifact(image_analysis)
+
         _, second_prompt = self._get_prompt()
 
         content = f"{second_prompt} {image_analysis}"
