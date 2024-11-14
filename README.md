@@ -91,6 +91,11 @@ python manga2description.py \
 - `--manga-path`: Path to the folder containing manga images (default: ./samples).
 - `--output-path`: Path to save the generated descriptions (default: ./output).
 - `--model`: Model to use for description generation (default: llava-0.5b; options: gpt-4o, gpt-4o-mini, llava-7b, llava-0.5b).
+- `--save-gpt-artifact`: Save GPT artifacts (only applicable for gpt-4o or gpt-4o-mini models).
+
+**Note**
+
+For `gpt-4o` and `gpt-4o-mini` models, we leverage a two-stage prompting strategy: first, the model analyzes the input image(s) across four aspects—**Genre**, **Emotional Atmosphere**, **Focus**, and **Plot**—to extract key details; then, based on the analysis, the model generates the music description. The `--save-gpt-artifact` flag saves the results of the first stage analysis to an artifact file, which is useful for reviewing intermediate outputs before generating the final music description. This flag is only applicable when using `gpt-4o` or `gpt-4o-mini`.
 
 ### Step 2: Description to Music
 
@@ -118,7 +123,7 @@ python description2music.py \
 - `--device`: Device to run the model on (cuda or cpu).
 
  ### Notes
-- The model can take images of arbitrary sizes, so it is not necessary to cut manga images into fixed sizes before processing. This allows for greater flexibility when using different manga sources.
+- The model can take images of arbitrary sizes, so it is not necessary to cut input images into fixed sizes before processing. This allows for greater flexibility when using different manga sources.
 
 - A single description will be generated for all images within a single `--manga-path`, and one single piece of music will be generated from that description. If you wish to generate multiple pieces of music for different sections of the manga, organize the images by placing all the images belonging to the same section into separate folders.
 
