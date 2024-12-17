@@ -1,9 +1,22 @@
 import gradio as gr
+from manga2description import generate_descriptions_from_manga
 
 
 def image_to_music_desc(images_folder, model_choice):
-    # Placeholder function for Stage 1
-    return f"Generated music description using {model_choice}"
+    output_path = "./gui_output"
+    try:
+        # Call the manga description generator
+        description_file = generate_descriptions_from_manga(
+            manga_path=images_folder,
+            output_path=output_path,
+            model=model_choice,
+            save_gpt_artifact=(model_choice in ["gpt-4o", "gpt-4o-mini"]),
+        )
+        with open(description_file, "r") as f:
+            descriptions = f.read()
+        return descriptions
+    except ValueError as e:
+        return f"Error: {e}"
 
 
 def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_count):
