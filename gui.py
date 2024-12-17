@@ -3,7 +3,7 @@ from manga2description import generate_descriptions_from_manga
 
 
 def image_to_music_desc(images_folder, model_choice):
-    output_path = "./gui_output"
+    output_path = "./output"
     try:
         # Call the manga description generator
         description_file = generate_descriptions_from_manga(
@@ -48,7 +48,8 @@ with gr.Blocks() as image_to_music_gui:
         gr.Markdown("### Manga Image to Music Description (Stage 1)")
     with gr.Row():
         images_folder_input = gr.Textbox(
-            label="Input Folder of Images", placeholder="Path to folder"
+            label="Select Folder Containing Manga Images",
+            placeholder="Drag and drop the folder here or paste the path",
         )
         img_to_desc_model_choice = gr.Dropdown(
             choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
