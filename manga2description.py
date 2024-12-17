@@ -1,55 +1,32 @@
-import argparse
 from pathlib import Path
 
 
-def parse_args():
-    parser = argparse.ArgumentParser(description="Convert manga to description")
-    parser.add_argument(
-        "--manga-path",
-        type=str,
-        help="Path to folder containing manga images",
-        default="./samples",
-    )
-    parser.add_argument(
-        "--output-path", type=str, help="Path to output folder", default="./output"
-    )
-    parser.add_argument(
-        "--model",
-        type=str,
-        help="Which LLM to use.",
-        choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
-        default="llava-0.5b",
-    )
-    # Flag for saving GPT artifacts
-    parser.add_argument(
-        "--save-gpt-artifact",
-        action="store_true",
-        help="Save GPT artifacts (only applicable for gpt-4o or gpt-4o-mini models).",
-    )
-    args = parser.parse_args()
+def generate_descriptions_from_manga(
+    manga_path, output_path, model, save_gpt_artifact=False
+):
+    """
+    Generate music descriptions from manga images.
 
-    # Conditional validation: Check if --save-gpt-artifact is set when --model is not gpt-4o or gpt-4o-mini
-    if args.save_gpt_artifact and args.model not in ["gpt-4o", "gpt-4o-mini"]:
-        parser.error(
-            "--save-gpt-artifact can only be used when --model is set to 'gpt-4o' or 'gpt-4o-mini'"
-        )
+    Args:
+        manga_path (str): Path to the folder containing manga images.
+        output_path (str): Path to the output folder.
+        model (str): Model to use for generation ('gpt-4o', 'gpt-4o-mini', 'llava-7b', 'llava-0.5b').
+        save_gpt_artifact (bool): Whether to save GPT artifacts (only for 'gpt-4o' or 'gpt-4o-mini').
 
-    return args
+    Returns:
+        str: The path to the saved description file.
+    """
+    image_paths = list(Path(manga_path).glob("*.jpg"))
+    if not image_paths:
+        raise ValueError(f"No images found in {manga_path}!")
 
-
-def main():
-    args = parse_args()
-    image_paths = list(Path(args.manga_path).glob("*.jpg"))
-    model = args.model
     print(f"Using model: {model}")
 
     if model in ["gpt-4o", "gpt-4o-mini"]:
         from models.gpt4o import GPT4o
 
         gpt4o = GPT4o(model=model)
-        descriptions = gpt4o.generate_music_description(
-            image_paths, args.save_gpt_artifact
-        )
+        descriptions = gpt4o.generate_music_description(image_paths, save_gpt_artifact)
 
     elif model in ["llava-7b", "llava-0.5b"]:
         from models.llava import LLAVA
@@ -62,12 +39,49 @@ def main():
         llava = LLAVA(pretrained_model=llava_model)
         descriptions = llava.generate_music_description(image_paths)
 
-    # save the descriptions to output path
-    Path(args.output_path).mkdir(parents=True, exist_ok=True)
-    file_name = f"{args.manga_path}_{model}.txt"
-    with open(Path(args.output_path) / file_name, "w") as f:
+    # Save the descriptions to output path
+    Path(output_path).mkdir(parents=True, exist_ok=True)
+    file_name = f"{Path(manga_path).name}_{model}.txt"
+    output_file = Path(output_path) / file_name
+    with open(output_file, "w") as f:
         f.write(descriptions)
-    print(f"Descriptions saved to {args.output_path}/{file_name}")
+
+    print(f"Descriptions saved to {output_file}")
+    return str(output_file)
+
+
+def main():
+    import argparse
+
+    parser = argparse.ArgumentParser(description="Convert manga to description")
+    parser.add_argument(
+        "--manga-path",
+        type=str,
+        default="./samples",
+        help="Path to folder containing manga images",
+    )
+    parser.add_argument(
+        "--output-path", type=str, default="./output", help="Path to output folder"
+    )
+    parser.add_argument(
+        "--model",
+        type=str,
+        choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
+        default="llava-0.5b",
+    )
+    parser.add_argument(
+        "--save-gpt-artifact",
+        action="store_true",
+        help="Save GPT artifacts (only for gpt-4o or gpt-4o-mini)",
+    )
+    args = parser.parse_args()
+
+    try:
+        generate_descriptions_from_manga(
+            args.manga_path, args.output_path, args.model, args.save_gpt_artifact
+        )
+    except ValueError as e:
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":
