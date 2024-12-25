@@ -100,13 +100,13 @@ with gr.Blocks() as music_desc_to_music_gui:
             placeholder="Input music description here",
         )
         desc_to_music_model_choice = gr.Dropdown(
-            value="musicgen-small",
+            value="musicgen-medium",
             choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
             label="Choose Model for Music Generation",
         )
     with gr.Row():
         duration_input = gr.Slider(
-            value=1, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
+            value=30, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
         )
         audio_format_choice = gr.Dropdown(
             value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
