@@ -1,86 +1,215 @@
-import argparse
 from pathlib import Path
 from audiocraft.models import MusicGen
 from audiocraft.data.audio import audio_write
+import numpy as np
 
 
-def parse_args():
+def load_model(model_name, device="cuda"):
+    """
+    Load the MusicGen model.
+
+    Args:
+        model_name (str): Model name ('musicgen-small', 'musicgen-medium', 'musicgen-large').
+        device (str): Device to run the model on ('cuda' or 'cpu').
+
+    Returns:
+        model: The loaded MusicGen model.
+    """
+    print(f"Loading model: {model_name} on {device}")
+    model = MusicGen.get_pretrained(f"facebook/{model_name}", device=device)
+    return model
+
+
+def save_audio(audio, sr, output_path, audio_format):
+    """
+    Save audio to a file.
+
+    Args:
+        audio (np.ndarray): Audio data.
+        sr (int): Sample rate.
+        output_path (str): Path to save the audio file.
+        audio_format (str): Audio format ('wav', 'mp3', 'ogg', 'flac').
+    """
+    audio_write(
+        output_path,
+        audio,
+        sr,
+        format=audio_format,
+        strategy="loudness",
+        loudness_compressor=True,
+        add_suffix=False,
+    )
+
+
+def generate_music_from_text(
+    description,
+    output_folder,
+    model_name,
+    duration,
+    audio_format,
+    bulk_count=1,
+    device="cuda",
+):
+    """
+    Generate music from a text description.
+
+    Args:
+        description (str): Text description for music generation.
+        output_folder (str): Folder path to save the generated music.
+        model_name (str): Size of the MusicGen model ('musicgen-small', 'musicgen-medium', 'musicgen-large').
+        duration (int): Length of the generated music in seconds.
+        audio_format (str): Audio format to save the music ('wav', 'mp3', 'ogg', 'flac').
+        bulk_count (int): Number of music samples to generate.
+        device (str): Device to run the model on ('cuda' or 'cpu').
+
+    Returns:
+        list of tuple: List of tuples containing the sample rate and audio tensor of each generated music.
+    """
+    # Load the MusicGen model
+    model = load_model(model_name, device=device)
+    model.set_generation_params(duration=duration)
+
+    discriptions = [description] * bulk_count
+
+    # Generate music from the description
+    print("Generating music...")
+    musics = model.generate(discriptions, progress=True)
+    sr = model.sample_rate
+
+    # Create the output folder if it doesn't exist
+    Path(output_folder).mkdir(parents=True, exist_ok=True)
+
+    # Save the generated music
+    print("Saving generated music...")
+    generated_files_path = []
+    for i, music in enumerate(musics):
+        output_path = f"{output_folder}/{i}.{audio_format}"
+        save_audio(
+            music.cpu(),
+            sr,
+            output_path,
+            audio_format,
+        )
+        print(f"Generated music saved at: {output_path}")
+        generated_files_path.append(output_path)
+
+    return generated_files_path
+
+
+def generate_music_from_folder_of_descriptions(
+    description_path, output_path, model_name, duration, audio_format, device="cuda"
+):
+    """
+    Generate music from descriptions using MusicGen.
+
+    Args:
+        description_path (str): Path to folder containing description files.
+        output_path (str): Path to folder to save generated music.
+        model_name (str): Size of the MusicGen model ('musicgen-small', 'musicgen-medium', 'musicgen-large').
+        duration (int): Length of the generated music in seconds.
+        audio_format (str): Audio format to save the music ('wav', 'mp3', 'ogg', 'flac').
+        device (str): Device to run the model on ('cuda' or 'cpu').
+
+    Returns:
+        list: List of paths to the generated music files.
+    """
+    description_paths = list(Path(description_path).glob("*.txt"))
+    if not description_paths:
+        raise ValueError(f"No description files found in {description_path}!")
+
+    descriptions = []
+    for description_file in description_paths:
+        with open(description_file, "r") as f:
+            descriptions.append(f.read())
+
+    # Load the MusicGen model
+    model = load_model(model_name, device=device)
+    model.set_generation_params(duration=duration)
+
+    # Generate music from descriptions
+    print("Generating music...")
+    musics = model.generate(descriptions, progress=True)
+
+    # Save generated music files
+    output_dir = Path(output_path)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    generated_files = []
+    for music, description_file in zip(musics, description_paths):
+        output_file = output_dir / f"{description_file.stem}.{audio_format}"
+        audio_write(
+            output_file,
+            music.cpu(),
+            model.sample_rate,
+            format=audio_format,
+            strategy="loudness",
+            loudness_compressor=True,
+            add_suffix=False,
+        )
+        generated_files.append(str(output_file))
+        print(f"Generated music saved at: {output_file}")
+
+    return generated_files
+
+
+def main():
+    import argparse
+
     parser = argparse.ArgumentParser(description="Convert description to music")
     parser.add_argument(
         "--description-path",
         type=str,
-        help="Path to folder containing descriptions",
         default="./output",
+        help="Path to folder containing descriptions",
     )
     parser.add_argument(
-        "--output-path",
-        type=str,
-        help="Path to output folder",
-        default="./output",
+        "--output-path", type=str, default="./output", help="Path to output folder"
     )
     parser.add_argument(
         "--model",
         type=str,
-        help="Which size of the musicgen model to use.",
         choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
         default="musicgen-large",
     )
     parser.add_argument(
         "--duration",
         type=int,
-        help="Length of the generated music in seconds",
         default=10,
+        help="Length of the generated music in seconds",
     )
     parser.add_argument(
         "--audio-format",
         type=str,
-        help="Audio format to save the generated music",
-        default="wav",
         choices=["wav", "mp3", "ogg", "flac"],
+        default="wav",
+        help="Audio format to save the music",
     )
     parser.add_argument(
-        "--device",
-        type=str,
-        help="Device to run the model on",
-        default="cuda",
+        "--device", type=str, default="cuda", help="Device to run the model on"
     )
-    return parser.parse_args()
+    args = parser.parse_args()
 
-
-def main():
-    args = parse_args()
-
-    print(f"Using model: {args.model}")
-    print(f"Use device: {args.device}")
-
-    # Load the descriptions
-    description_paths = list(Path(args.description_path).glob("*.txt"))
-    descriptions = []
-    for description_path in description_paths:
-        with open(description_path, "r") as f:
-            descriptions.append(f.read())
-
-    # Load the model
-    model = MusicGen.get_pretrained(f"facebook/{args.model}", device=args.device)
-    model.set_generation_params(duration=args.duration)
-
-    # Generate music for each description
-    musics = model.generate(descriptions, progress=True)
-
-    # Save the generated music
-    for music, description_path in zip(musics, description_paths):
-        output_path = Path(args.output_path) / f"{description_path.stem}"
-        audio_write(
-            output_path,
-            music.cpu(),
-            model.sample_rate,
-            format=args.audio_format,
-            strategy="loudness",
-            loudness_compressor=True,
-            add_suffix=True,
+    try:
+        generate_music_from_folder_of_descriptions(
+            args.description_path,
+            args.output_path,
+            args.model,
+            args.duration,
+            args.audio_format,
+            args.device,
         )
-        print(f"Generated music for {description_path} at {output_path}")
+    except ValueError as e:
+        print(f"Error: {e}")
 
 
 if __name__ == "__main__":
-    main()
+    # main()
+    result = generate_music_from_text(
+        description="A cool Jazz music.",
+        output_folder="./output/debug",
+        model_name="musicgen-small",
+        duration=5,
+        audio_format="wav",
+        bulk_count=10,
+        device="cuda",
+    )
+    print(result)

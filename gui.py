@@ -1,5 +1,11 @@
 import gradio as gr
+import numpy as np
+import pytz
+from datetime import datetime
 from manga2description import generate_descriptions_from_manga
+
+# from description2music import generate_music_from_descriptions
+from description2music import generate_music_from_text
 
 
 def image_to_music_desc(images_folder, model_choice):
@@ -20,11 +26,24 @@ def image_to_music_desc(images_folder, model_choice):
 
 
 def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_count):
-    # Placeholder function for Stage 2
-    return [
-        f"Generated {audio_format} audio with {model_choice}, {duration}s duration (Bulk {i+1})"
-        for i in range(bulk_count)
-    ]
+    timestamp = datetime.now(pytz.timezone("Asia/Taipei")).strftime("%Y%m%d_%H%M%S")
+    output_folder = f"./output/{timestamp}"
+    try:
+        # Call the music generator
+        generated_files_paths = generate_music_from_text(
+            description=music_desc,
+            output_folder=output_folder,
+            model_name=model_choice,
+            duration=duration,
+            audio_format=audio_format,
+            bulk_count=bulk_count,
+            device="cuda",
+        )
+
+        return generated_files_paths
+
+    except ValueError as e:
+        return f"Error: {e}"
 
 
 def single_stage(
@@ -72,25 +91,28 @@ with gr.Blocks() as music_desc_to_music_gui:
     with gr.Row():
         gr.Markdown("### Music Description to Music (Stage 2)")
     with gr.Row():
-        music_desc_input = gr.Textbox(label="Input Music Description")
+        music_desc_input = gr.Textbox(
+            label="Music Description",
+            placeholder="Input music description here",
+        )
         desc_to_music_model_choice = gr.Dropdown(
+            value="musicgen-medium",
             choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
             label="Choose Model for Music Generation",
         )
     with gr.Row():
         duration_input = gr.Slider(
-            minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
+            value=30, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
         )
         audio_format_choice = gr.Dropdown(
-            choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
+            value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
         )
-        bulk_count_input = gr.Number(
-            value=1, precision=0, label="Number of Variations for Bulk Generation"
-        )
-    with gr.Row():
-        music_output = gr.Textbox(label="Generated Music Files", interactive=False)
+        bulk_count_input = gr.Number(value=3, precision=0, label="Bulk Generation")
     with gr.Row():
         gen_music_button = gr.Button("Generate Music")
+
+    audio_paths = gr.State([])
+
     gen_music_button.click(
         music_desc_to_music,
         inputs=[
@@ -100,8 +122,16 @@ with gr.Blocks() as music_desc_to_music_gui:
             audio_format_choice,
             bulk_count_input,
         ],
-        outputs=music_output,
+        outputs=audio_paths,
     )
+
+    @gr.render(inputs=audio_paths)
+    def render_audio_display(audio_paths):
+        if not audio_paths:
+            return
+        for audio_path in audio_paths:
+            gr.Audio(value=audio_path, label=audio_path.split("/")[-1])
+
 
 # Single-Stage GUI
 with gr.Blocks() as single_stage_gui:
