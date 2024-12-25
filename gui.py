@@ -21,7 +21,7 @@ def image_to_music_desc(images_folder, model_choice):
         with open(description_file, "r") as f:
             descriptions = f.read()
         return descriptions, gr.update(interactive=True)
-    except ValueError as e:
+    except Exception as e:
         return f"Error: {e}", gr.update(interactive=True)
 
 
@@ -46,7 +46,7 @@ def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_c
             gr.update(interactive=True),
         )
 
-    except ValueError as e:
+    except Exception as e:
         return (
             f"Error: {e}",
             gr.update(value="", visible=False),
@@ -156,7 +156,7 @@ with gr.Blocks() as music_desc_to_music_gui:
         ),
         inputs=[],
         outputs=[progress_bar, gen_music_button],
-        show_progress=False,
+        show_progress=True,
     )
 
     # Generate music
