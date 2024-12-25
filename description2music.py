@@ -2,6 +2,7 @@ from pathlib import Path
 from audiocraft.models import MusicGen
 from audiocraft.data.audio import audio_write
 import numpy as np
+import json
 
 
 def load_model(model_name, device="cuda"):
@@ -92,6 +93,20 @@ def generate_music_from_text(
         )
         print(f"Generated music saved at: {output_path}")
         generated_files_path.append(output_path)
+
+    # Save metadata to data.json
+    metadata = {
+        "description": description,
+        "model_name": model_name,
+        "duration": duration,
+        "bulk_count": bulk_count,
+        "audio_format": audio_format,
+        "generated_files": generated_files_path,
+    }
+    metadata_path = Path(output_folder) / "data.json"
+    with open(metadata_path, "w") as metadata_file:
+        json.dump(metadata, metadata_file, indent=4)
+    print(f"Metadata saved at: {metadata_path}")
 
     return generated_files_path
 
