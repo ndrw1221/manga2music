@@ -3,6 +3,7 @@ from audiocraft.models import MusicGen
 from audiocraft.data.audio import audio_write
 import numpy as np
 import json
+import torch
 
 
 def load_model(model_name, device="cuda"):
@@ -66,49 +67,57 @@ def generate_music_from_text(
     Returns:
         list of tuple: List of tuples containing the sample rate and audio tensor of each generated music.
     """
-    # Load the MusicGen model
-    model = load_model(model_name, device=device)
-    model.set_generation_params(duration=duration)
+    try:
+        # Load the MusicGen model
+        model = load_model(model_name, device=device)
+        model.set_generation_params(duration=duration)
 
-    discriptions = [description] * bulk_count
+        descriptions = [description] * bulk_count
 
-    # Generate music from the description
-    print("Generating music...")
-    musics = model.generate(discriptions, progress=True)
-    sr = model.sample_rate
+        # Generate music from the description
+        print("Generating music...")
+        musics = model.generate(descriptions, progress=True)
+        sr = model.sample_rate
 
-    # Create the output folder if it doesn't exist
-    Path(output_folder).mkdir(parents=True, exist_ok=True)
+        # Create the output folder if it doesn't exist
+        Path(output_folder).mkdir(parents=True, exist_ok=True)
 
-    # Save the generated music
-    print("Saving generated music...")
-    generated_files_path = []
-    for i, music in enumerate(musics):
-        output_path = f"{output_folder}/{i}.{audio_format}"
-        save_audio(
-            music.cpu(),
-            sr,
-            output_path,
-            audio_format,
-        )
-        print(f"Generated music saved at: {output_path}")
-        generated_files_path.append(output_path)
+        # Save the generated music
+        print("Saving generated music...")
+        generated_files_path = []
+        for i, music in enumerate(musics):
+            output_path = f"{output_folder}/{i}.{audio_format}"
+            save_audio(
+                music.cpu(),
+                sr,
+                output_path,
+                audio_format,
+            )
+            print(f"Generated music saved at: {output_path}")
+            generated_files_path.append(output_path)
 
-    # Save metadata to data.json
-    metadata = {
-        "description": description,
-        "model_name": model_name,
-        "duration": duration,
-        "bulk_count": bulk_count,
-        "audio_format": audio_format,
-        "generated_files": generated_files_path,
-    }
-    metadata_path = Path(output_folder) / "data.json"
-    with open(metadata_path, "w") as metadata_file:
-        json.dump(metadata, metadata_file, indent=4)
-    print(f"Metadata saved at: {metadata_path}")
+        # Save metadata to data.json
+        metadata = {
+            "description": description,
+            "model_name": model_name,
+            "duration": duration,
+            "bulk_count": bulk_count,
+            "audio_format": audio_format,
+            "generated_files": generated_files_path,
+        }
+        metadata_path = Path(output_folder) / "data.json"
+        with open(metadata_path, "w") as metadata_file:
+            json.dump(metadata, metadata_file, indent=4)
+        print(f"Metadata saved at: {metadata_path}")
 
-    return generated_files_path
+        return generated_files_path
+
+    finally:
+        # Cleanup: Release VRAM
+        print("Releasing GPU resources...")
+        del model  # Delete the model
+        torch.cuda.empty_cache()  # Clear PyTorch GPU cache
+        torch.cuda.synchronize()  # Synchronize to ensure all operations are complete
 
 
 def generate_music_from_folder_of_descriptions(
