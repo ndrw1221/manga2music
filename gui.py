@@ -40,7 +40,11 @@ def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_c
             device="cuda",
         )
 
-        return generated_files_paths
+        return (
+            generated_files_paths,
+            gr.update(value="", visible=False),
+            gr.update(interactive=True),
+        )
 
     except ValueError as e:
         return f"Error: {e}"
@@ -96,23 +100,44 @@ with gr.Blocks() as music_desc_to_music_gui:
             placeholder="Input music description here",
         )
         desc_to_music_model_choice = gr.Dropdown(
-            value="musicgen-medium",
+            value="musicgen-small",
             choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
             label="Choose Model for Music Generation",
         )
     with gr.Row():
         duration_input = gr.Slider(
-            value=30, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
+            value=1, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
         )
         audio_format_choice = gr.Dropdown(
             value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
         )
         bulk_count_input = gr.Number(value=3, precision=0, label="Bulk Generation")
     with gr.Row():
-        gen_music_button = gr.Button("Generate Music")
+        progress_bar = gr.Textbox(value="", visible=False, label="generating...")
+    with gr.Row():
+        gen_music_button = gr.Button("Generate Music", interactive=False)
 
     audio_paths = gr.State([])
 
+    # Dynamically enable/disable the button
+    music_desc_input.change(
+        lambda description: gr.update(interactive=bool(description)),
+        inputs=[music_desc_input],
+        outputs=[gen_music_button],
+    )
+
+    # Show progress bar during generation
+    gen_music_button.click(
+        lambda: (
+            gr.update(value="Generating music...", visible=True),
+            gr.update(interactive=False),
+        ),
+        inputs=[],
+        outputs=[progress_bar, gen_music_button],
+        show_progress=False,
+    )
+
+    # Generate music
     gen_music_button.click(
         music_desc_to_music,
         inputs=[
@@ -122,12 +147,12 @@ with gr.Blocks() as music_desc_to_music_gui:
             audio_format_choice,
             bulk_count_input,
         ],
-        outputs=audio_paths,
+        outputs=[audio_paths, progress_bar, gen_music_button],
     )
 
     @gr.render(inputs=audio_paths)
     def render_audio_display(audio_paths):
-        if not audio_paths:
+        if len(audio_paths) == 0:
             return
         for audio_path in audio_paths:
             gr.Audio(value=audio_path, label=audio_path.split("/")[-1])
