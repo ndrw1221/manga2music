@@ -9,25 +9,25 @@ from description2music import generate_music_from_text
 
 
 def image_to_music_desc(images_folder, model_choice):
-    output_path = "./output"
+    timestamp = datetime.now(pytz.timezone("Asia/Taipei")).strftime("%Y%m%d_%H%M%S")
+    output_path = f"./output/descriptions/{timestamp}"
     try:
         # Call the manga description generator
         description_file = generate_descriptions_from_manga(
             manga_path=images_folder,
             output_path=output_path,
             model=model_choice,
-            save_gpt_artifact=(model_choice in ["gpt-4o", "gpt-4o-mini"]),
         )
         with open(description_file, "r") as f:
             descriptions = f.read()
-        return descriptions
+        return descriptions, gr.update(interactive=True)
     except ValueError as e:
-        return f"Error: {e}"
+        return f"Error: {e}", gr.update(interactive=True)
 
 
 def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_count):
     timestamp = datetime.now(pytz.timezone("Asia/Taipei")).strftime("%Y%m%d_%H%M%S")
-    output_folder = f"./output/{timestamp}"
+    output_folder = f"./output/musics/{timestamp}"
     try:
         # Call the music generator
         generated_files_paths = generate_music_from_text(
@@ -47,7 +47,11 @@ def music_desc_to_music(music_desc, model_choice, duration, audio_format, bulk_c
         )
 
     except ValueError as e:
-        return f"Error: {e}"
+        return (
+            f"Error: {e}",
+            gr.update(value="", visible=False),
+            gr.update(interactive=True),
+        )
 
 
 def single_stage(
@@ -75,6 +79,7 @@ with gr.Blocks() as image_to_music_gui:
             placeholder="Drag and drop the folder here or paste the path",
         )
         img_to_desc_model_choice = gr.Dropdown(
+            value="gpt-4o-mini",
             choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
             label="Choose Model for Image to Music Description",
         )
@@ -83,11 +88,25 @@ with gr.Blocks() as image_to_music_gui:
             label="Generated Music Description", interactive=False
         )
     with gr.Row():
-        gen_desc_button = gr.Button("Generate Description")
+        gen_desc_button = gr.Button("Generate Description", interactive=False)
+
+    # Dynamically enable/disable the button
+    images_folder_input.change(
+        lambda folder: gr.update(interactive=bool(folder)),
+        inputs=[images_folder_input],
+        outputs=[gen_desc_button],
+    )
+
+    gen_desc_button.click(
+        lambda: gr.update(interactive=False),
+        inputs=[],
+        outputs=[gen_desc_button],
+    )
+
     gen_desc_button.click(
         image_to_music_desc,
         inputs=[images_folder_input, img_to_desc_model_choice],
-        outputs=music_desc_output,
+        outputs=[music_desc_output, gen_desc_button],
     )
 
 # Stage 2 GUI
@@ -99,19 +118,22 @@ with gr.Blocks() as music_desc_to_music_gui:
             label="Music Description",
             placeholder="Input music description here",
         )
+    with gr.Row():
         desc_to_music_model_choice = gr.Dropdown(
             value="musicgen-medium",
             choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
             label="Choose Model for Music Generation",
         )
+        audio_format_choice = gr.Dropdown(
+            value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
+        )
     with gr.Row():
         duration_input = gr.Slider(
             value=30, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
         )
-        audio_format_choice = gr.Dropdown(
-            value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
+        bulk_count_input = gr.Slider(
+            value=3, minimum=1, maximum=10, step=1, label="Bulk Generation"
         )
-        bulk_count_input = gr.Number(value=3, precision=0, label="Bulk Generation")
     with gr.Row():
         progress_bar = gr.Textbox(value="", visible=False, label="generating...")
     with gr.Row():
