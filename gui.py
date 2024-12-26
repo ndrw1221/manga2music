@@ -72,7 +72,7 @@ def single_stage(
 # Stage 1 GUI
 with gr.Blocks() as image_to_music_gui:
     with gr.Row():
-        gr.Markdown("### Manga Image to Music Description (Stage 1)")
+        gr.Markdown("### Stage 1 - Manga Image to Music Description")
     with gr.Row():
         images_folder_input = gr.Textbox(
             label="Select Folder Containing Manga Images",
@@ -112,7 +112,7 @@ with gr.Blocks() as image_to_music_gui:
 # Stage 2 GUI
 with gr.Blocks() as music_desc_to_music_gui:
     with gr.Row():
-        gr.Markdown("### Music Description to Music (Stage 2)")
+        gr.Markdown("### Stage 2 - Music Description to Music")
     with gr.Row():
         music_desc_input = gr.Textbox(
             label="Music Description",
@@ -183,33 +183,33 @@ with gr.Blocks() as music_desc_to_music_gui:
 # Single-Stage GUI
 with gr.Blocks() as single_stage_gui:
     with gr.Row():
-        gr.Markdown("### Single-Stage Generation")
-    with gr.Row():
         images_folder_input_single = gr.Textbox(
-            label="Input Folder of Images", placeholder="Path to folder"
+            label="Select Folder Containing Manga Images",
+            placeholder="Drag and drop the folder here or paste the path",
         )
+    with gr.Row():
         img_to_desc_model_choice_single = gr.Dropdown(
+            value="gpt-4o-mini",
             choices=["gpt-4o", "gpt-4o-mini", "llava-7b", "llava-0.5b"],
             label="Choose Model for Image to Music Description",
         )
         desc_to_music_model_choice_single = gr.Dropdown(
+            value="musicgen-medium",
             choices=["musicgen-small", "musicgen-medium", "musicgen-large"],
             label="Choose Model for Music Generation",
         )
     with gr.Row():
         duration_input_single = gr.Slider(
-            minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
+            value=30, minimum=1, maximum=120, step=1, label="Audio Duration (seconds)"
         )
         audio_format_choice_single = gr.Dropdown(
-            choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
+            value="mp3", choices=["wav", "mp3", "ogg", "flac"], label="Audio Format"
         )
-        bulk_count_input_single = gr.Number(
-            value=1, precision=0, label="Number of Variations for Bulk Generation"
+        bulk_count_input_single = gr.Slider(
+            value=3, minimum=1, maximum=10, step=1, label="Bulk Generation"
         )
     with gr.Row():
-        music_output_single = gr.Textbox(
-            label="Generated Music Files", interactive=False
-        )
+        progress_bar_single = gr.Textbox(value="", visible=False, label="generating...")
     with gr.Row():
         gen_single_stage_button = gr.Button("Generate Music")
     gen_single_stage_button.click(
@@ -230,11 +230,10 @@ with gr.Blocks() as app:
     with gr.Row():
         gr.Markdown("# Manga Image to Music Generator")
     with gr.Tab("Two-Stage Generation"):
-        gr.Markdown("### Perform Stage 1 and Stage 2 Separately")
         image_to_music_gui.render()
         music_desc_to_music_gui.render()
     with gr.Tab("Single-Stage Generation"):
-        gr.Markdown("### Perform Single-Stage Generation")
+        gr.Markdown("### Single-Stage - Image to Music")
         single_stage_gui.render()
 
 app.launch()
