@@ -62,11 +62,18 @@ def single_stage(
     audio_format,
     bulk_count,
 ):
-    # Combines Stage 1 and Stage 2
-    music_desc = image_to_music_desc(images_folder, img_to_desc_model)
-    return music_desc_to_music(
-        music_desc, desc_to_music_model, duration, audio_format, bulk_count
-    )
+    try:
+        # Combines Stage 1 and Stage 2
+        music_desc, _ = image_to_music_desc(images_folder, img_to_desc_model)
+        return music_desc_to_music(
+            music_desc, desc_to_music_model, duration, audio_format, bulk_count
+        )
+    except Exception as e:
+        return (
+            f"Error: {e}",
+            gr.update(value="", visible=False),
+            gr.update(interactive=True),
+        )
 
 
 # Stage 1 GUI
@@ -211,7 +218,28 @@ with gr.Blocks() as single_stage_gui:
     with gr.Row():
         progress_bar_single = gr.Textbox(value="", visible=False, label="generating...")
     with gr.Row():
-        gen_single_stage_button = gr.Button("Generate Music")
+        gen_single_stage_button = gr.Button("Generate Music", interactive=False)
+
+    audio_paths_single = gr.State([])
+
+    # Dynamically enable/disable the button
+    images_folder_input_single.change(
+        lambda folder: gr.update(interactive=bool(folder)),
+        inputs=[images_folder_input_single],
+        outputs=[gen_single_stage_button],
+    )
+
+    # Show progress bar during generation
+    gen_single_stage_button.click(
+        lambda: (
+            gr.update(value="Generating music...", visible=True),
+            gr.update(interactive=False),
+        ),
+        inputs=[],
+        outputs=[progress_bar_single, gen_single_stage_button],
+        show_progress=True,
+    )
+
     gen_single_stage_button.click(
         single_stage,
         inputs=[
@@ -222,8 +250,16 @@ with gr.Blocks() as single_stage_gui:
             audio_format_choice_single,
             bulk_count_input_single,
         ],
-        outputs=music_output_single,
+        outputs=[audio_paths_single, progress_bar_single, gen_single_stage_button],
     )
+
+    @gr.render(inputs=audio_paths_single)
+    def render_audio_display_single(audio_paths_single):
+        if len(audio_paths_single) == 0:
+            return
+        for audio_path in audio_paths_single:
+            gr.Audio(value=audio_path, label=audio_path.split("/")[-1])
+
 
 # Main App with Navigation
 with gr.Blocks() as app:
