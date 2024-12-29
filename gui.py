@@ -92,7 +92,9 @@ with gr.Blocks() as image_to_music_gui:
         )
     with gr.Row():
         music_desc_output = gr.Textbox(
-            label="Generated Music Description", interactive=False
+            label="Generated Music Description",
+            interactive=False,
+            show_copy_button=True,
         )
     with gr.Row():
         gen_desc_button = gr.Button("Generate Description", interactive=False)
@@ -184,7 +186,11 @@ with gr.Blocks() as music_desc_to_music_gui:
         if len(audio_paths) == 0:
             return
         for audio_path in audio_paths:
-            gr.Audio(value=audio_path, label=audio_path.split("/")[-1])
+            gr.Audio(
+                value=audio_path,
+                label=audio_path.split("/")[-1],
+                show_download_button=True,
+            )
 
 
 # Single-Stage GUI
