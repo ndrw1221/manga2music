@@ -210,30 +210,35 @@ def main():
     parser.add_argument(
         "--device", type=str, default="cuda", help="Device to run the model on"
     )
+    parser.add_argument(
+        "--debug", action="store_true", help="Enable debug mode for verbose output"
+    )
     args = parser.parse_args()
 
     try:
-        generate_music_from_folder_of_descriptions(
-            args.description_path,
-            args.output_path,
-            args.model,
-            args.duration,
-            args.audio_format,
-            args.device,
-        )
+        if args.debug:
+            result = generate_music_from_text(
+                description="A cool Jazz music.",
+                output_folder="./output/debug",
+                model_name="musicgen-small",
+                duration=5,
+                audio_format="wav",
+                bulk_count=10,
+                device="cuda",
+            )
+            print(result)
+        else:
+            generate_music_from_folder_of_descriptions(
+                args.description_path,
+                args.output_path,
+                args.model,
+                args.duration,
+                args.audio_format,
+                args.device,
+            )
     except ValueError as e:
         print(f"Error: {e}")
 
 
 if __name__ == "__main__":
-    # main()
-    result = generate_music_from_text(
-        description="A cool Jazz music.",
-        output_folder="./output/debug",
-        model_name="musicgen-small",
-        duration=5,
-        audio_format="wav",
-        bulk_count=10,
-        device="cuda",
-    )
-    print(result)
+    main()
