@@ -1,4 +1,5 @@
 from pathlib import Path
+import torch
 
 
 def generate_descriptions_from_manga(
@@ -16,38 +17,48 @@ def generate_descriptions_from_manga(
     Returns:
         str: The path to the saved description file.
     """
-    image_paths = list(Path(manga_path).glob("*.jpg"))
-    if not image_paths:
-        raise ValueError(f"No images found in {manga_path}!")
+    try:
+        image_paths = list(Path(manga_path).glob("*.jpg"))
+        if not image_paths:
+            raise ValueError(f"No images found in {manga_path}!")
 
-    print(f"Using model: {model}")
+        print(f"Using model: {model}")
 
-    if model in ["gpt-4o", "gpt-4o-mini"]:
-        from models.gpt4o import GPT4o
+        if model in ["gpt-4o", "gpt-4o-mini"]:
+            from models.gpt4o import GPT4o
 
-        gpt4o = GPT4o(model=model)
-        descriptions = gpt4o.generate_music_description(image_paths, save_gpt_artifact)
+            gpt4o = GPT4o(model=model)
+            descriptions = gpt4o.generate_music_description(
+                image_paths, save_gpt_artifact
+            )
 
-    elif model in ["llava-7b", "llava-0.5b"]:
-        from models.llava import LLAVA
+        elif model in ["llava-7b", "llava-0.5b"]:
+            from models.llava import LLAVA
 
-        llava_model = (
-            "lmms-lab/llava-next-interleave-qwen-7b"
-            if model == "llava-7b"
-            else "lmms-lab/llava-next-interleave-qwen-0.5b"
-        )
-        llava = LLAVA(pretrained_model=llava_model)
-        descriptions = llava.generate_music_description(image_paths)
+            llava_model = (
+                "lmms-lab/llava-next-interleave-qwen-7b"
+                if model == "llava-7b"
+                else "lmms-lab/llava-next-interleave-qwen-0.5b"
+            )
+            llava = LLAVA(pretrained_model=llava_model)
+            descriptions = llava.generate_music_description(image_paths)
 
-    # Save the descriptions to output path
-    Path(output_path).mkdir(parents=True, exist_ok=True)
-    file_name = f"{Path(manga_path).name}_{model}.txt"
-    output_file = Path(output_path) / file_name
-    with open(output_file, "w") as f:
-        f.write(descriptions)
+        # Save the descriptions to output path
+        Path(output_path).mkdir(parents=True, exist_ok=True)
+        file_name = f"{Path(manga_path).name}_{model}.txt"
+        output_file = Path(output_path) / file_name
+        with open(output_file, "w") as f:
+            f.write(descriptions)
 
-    print(f"Descriptions saved to {output_file}")
-    return str(output_file)
+        print(f"Descriptions saved to {output_file}")
+        return str(output_file)
+    finally:
+        if model in ["llava-7b", "llava-0.5b"]:
+            print("Releasing GPU memory...")
+            del llava
+            torch.cuda.empty_cache()
+            torch.cuda.synchronize()
+            print("GPU memory released.")
 
 
 def main():
