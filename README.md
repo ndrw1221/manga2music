@@ -10,7 +10,8 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
 
 ## Table of Contents
 - [Setup and Installation](#setup-and-installation)
-- [How to Use](#how-to-use)
+- [GUI Usage](#gui-usage)
+- [CLI Usage](#cli-usage)
   - [Step 1: Manga to Description](#step-1-manga-to-description)
   - [Step 2: Description to Music](#step-2-description-to-music)
 - [Model Selection](#model-selection)
@@ -18,7 +19,7 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
 
 ## Setup and Installation
 ### Prerequisites
-- Python 3.9
+- Python 3.10
 - CUDA-compatible GPU (for faster processing)
 - `conda` (recommneded) or `pip` for package installation
 - OpenAI API Key (required for GPT-4o and GPT-4o-mini models)
@@ -70,7 +71,19 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
     ```
     You should see `samples_llava-0.5b.wav` under `.output`.
 
-## How to Use
+## GUI Usage
+
+The gui.py script provides an interactive graphical interface for the Manga2Music project. It allows users to process manga images into music through either a two-stage process or a single-stage process. 
+
+To start the application, run the following command:
+
+```bash
+python gui.py
+```
+
+The app will launch in your default web browser, allowing you to interact with the system seamlessly.
+
+## CLI Usage
 
 The process involves two main scripts:
 
@@ -121,6 +134,7 @@ python description2music.py \
 - `--duration`: Length of the generated music in seconds (default: 10).
 - `--audio-format`: Audio format to save the generated music (default: wav; options: wav, mp3, ogg, flac).
 - `--device`: Device to run the model on (cuda or cpu).
+- `--debug`: Enable debug mode for detailed logging (default: False).
 
  ### Notes
 - The model can take images of arbitrary sizes, so it is not necessary to cut input images into fixed sizes before processing. This allows for greater flexibility when using different manga sources.
