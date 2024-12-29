@@ -118,6 +118,7 @@ def generate_music_from_text(
         del model  # Delete the model
         torch.cuda.empty_cache()  # Clear PyTorch GPU cache
         torch.cuda.synchronize()  # Synchronize to ensure all operations are complete
+        print("GPU resources released.")
 
 
 def generate_music_from_folder_of_descriptions(
