@@ -278,4 +278,5 @@ with gr.Blocks() as app:
         gr.Markdown("### Single-Stage - Image to Music")
         single_stage_gui.render()
 
-app.launch()
+if __name__ == "__main__":
+    app.launch()
