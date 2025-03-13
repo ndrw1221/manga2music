@@ -10,6 +10,7 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
 
 ## Table of Contents
 - [Setup and Installation](#setup-and-installation)
+- [Docker Container Usgae](#docker-container-usage)
 - [GUI Usage](#gui-usage)
 - [CLI Usage](#cli-usage)
   - [Step 1: Manga to Description](#step-1-manga-to-description)
@@ -70,6 +71,52 @@ The resulting audio captures the mood and atmosphere of the manga content, creat
     python description2music.py
     ```
     You should see `samples_llava-0.5b.wav` under `.output`.
+
+## Docker Container Usage
+
+### Step 1: Download the Manga2Music Docker Image
+
+Ensure that Docker is installed and running.
+
+Open a terminal or PowerShell and execute the following command:
+
+```bash
+docker pull ndrw1221/manga2music
+```
+
+After completion, verify the download by running:
+
+```bash
+docker images
+```
+
+If you see `ndrw1221/manga2music`, the image was successfully downloaded.
+
+### Step 2: Run the Manga2Music Docker Container
+
+Open PowerShell or a terminal and execute the following command:
+
+```bash
+docker run --rm -it --gpus all -p 7860:7860 \
+  -e OPENAI_API_KEY=<your_openai_api_key> \
+  -v <output_folder>:/app/output \
+  -v <image_folder>:/app/images \
+  ndrw1221/manga2music:latest
+```
+
+**Note:**
+
+- Replace <your_openai_api_key> with your actual OpenAI API key.
+
+- Replace <output_folder> with the directory where you want to save generated files.
+
+- Replace <image_folder> with the parent directory containing your manga image folders.
+
+If you see Running on local URL: `http://0.0.0.0:7860`, the service has started successfully.
+
+Open a web browser and visit `http://localhost:7860` to access the application.
+
+To stop the process, press `Ctrl+C` in the terminal where the command is running.
 
 ## GUI Usage
 
